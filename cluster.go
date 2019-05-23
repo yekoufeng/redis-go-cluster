@@ -494,7 +494,7 @@ func (cluster *Cluster) getNodeByKey(arg interface{}) (*redisNode, error) {
 }
 
 func (cluster *Cluster) auth(node *redisNode) error {
-	_, err := Values(node.do("AUTH", cluster.password))
+	_, err := node.do("AUTH", cluster.password)
 	return err
 }
 
