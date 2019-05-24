@@ -89,6 +89,7 @@ func NewCluster(options *Options) (*Cluster, error) {
 			writeTimeout: options.WriteTimeout,
 			keepAlive:    options.KeepAlive,
 			aliveTime:    options.AliveTime,
+			password:     options.Password,
 		}
 
 		err := cluster.update(node)
