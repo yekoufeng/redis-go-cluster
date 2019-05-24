@@ -261,6 +261,10 @@ func (conn *redisConn) writeInt64(n int64) error {
     return conn.writeBytes(strconv.AppendInt(conn.numScratch[:0], n, 10))
 }
 
+func (conn *redisConn) writeUInt64(n uint64) error {
+	return conn.writeBytes(strconv.AppendUint(conn.numScratch[:0], n, 10))
+}
+
 func (conn *redisConn) writeFloat64(n float64) error {
     return conn.writeBytes(strconv.AppendFloat(conn.numScratch[:0], n, 'g', -1, 64))
 }
@@ -275,10 +279,18 @@ func (conn *redisConn) writeCommand(cmd string, args []interface{}) error {
 		break
 	}
 	switch arg := arg.(type) {
+	case int32:
+		err = conn.writeInt64(int64(arg))
 	case int:
 	    err = conn.writeInt64(int64(arg))
 	case int64:
 	    err = conn.writeInt64(arg)
+	case uint32:
+		err = conn.writeUInt64(uint64(arg))
+	case uint:
+		err = conn.writeUInt64(uint64(arg))
+	case uint64:
+		err = conn.writeUInt64(arg)
 	case float64:
 	    err = conn.writeFloat64(arg)
 	case string:
