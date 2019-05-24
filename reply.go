@@ -130,7 +130,7 @@ func String(reply interface{}, err error) (string, error) {
 	case redisError:
 		return "", reply
 	}
-	return "", fmt.Errorf("unexpected type %T for String", reply)
+	return "", fmt.Errorf("unexpected type[%T] for String", reply)
 }
 
 // Bytes is a helper that converts a command reply to a slice of bytes. If err
