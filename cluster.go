@@ -133,12 +133,12 @@ func (cluster *Cluster) Do(cmd string, args ...interface{}) (interface{}, error)
 
 	node, err := cluster.getNodeByKey(args[0])
 	if err != nil {
-		return nil, fmt.Errorf("Do: %v", err)
+        return nil, fmt.Errorf("Do getNodeByKey failed[%v]", err)
 	}
 
 	reply, err := node.do(cmd, args...)
 	if err != nil {
-		return nil, fmt.Errorf("Do: %v", err)
+		return nil, fmt.Errorf("Do failed[%v]", err)
 	}
 
 	resp := checkReply(reply)
