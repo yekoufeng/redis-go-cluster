@@ -320,10 +320,6 @@ func checkReply(reply interface{}) int {
 }
 
 func (cluster *Cluster) update(node *redisNode) error {
-	if err := cluster.auth(node); err != nil {
-		return fmt.Errorf("auth failed[%v]", err)
-	}
-
 	info, err := Values(node.do("CLUSTER", "SLOTS"))
 	if err != nil {
 		return err
@@ -398,6 +394,7 @@ func (cluster *Cluster) update(node *redisNode) error {
 				writeTimeout: cluster.writeTimeout,
 				keepAlive:    cluster.keepAlive,
 				aliveTime:    cluster.aliveTime,
+				password:     cluster.password,
 			}
 		}
 
@@ -491,11 +488,6 @@ func (cluster *Cluster) getNodeByKey(arg interface{}) (*redisNode, error) {
 	}
 
 	return node, nil
-}
-
-func (cluster *Cluster) auth(node *redisNode) error {
-	_, err := node.do("AUTH", cluster.password)
-	return err
 }
 
 func key(arg interface{}) (string, error) {

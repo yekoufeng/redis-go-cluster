@@ -62,6 +62,8 @@ type redisNode struct {
 	updateTime time.Time
 
 	closed bool
+
+	password string
 }
 
 func (node *redisNode) getConn() (*redisConn, error) {
@@ -103,6 +105,13 @@ func (node *redisNode) getConn() (*redisConn, error) {
 			writeTimeout: node.writeTimeout,
 		}
 
+		if node.password != "" {
+			err = conn.auth(node.password)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		return conn, nil
 	}
 
@@ -130,6 +139,26 @@ func (node *redisNode) releaseConn(conn *redisConn) {
 
 	conn.t = time.Now()
 	node.conns.PushFront(conn)
+}
+
+func (conn *redisConn) auth(password string) (err error) {
+	if err = conn.send("AUTH", password); err != nil {
+		conn.shutdown()
+		return
+	}
+
+	if err = conn.flush(); err != nil {
+		conn.shutdown()
+		return
+	}
+
+	_, err = conn.receive()
+	if err != nil {
+		conn.shutdown()
+		return
+	}
+
+	return nil
 }
 
 func (conn *redisConn) shutdown() {
