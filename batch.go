@@ -16,6 +16,7 @@ package redis
 
 import (
 	"fmt"
+	"strings"
 )
 
 // Batch pack multiple commands, which should be supported by Do method.
@@ -51,22 +52,31 @@ func (cluster *Cluster) NewBatch() *Batch {
 
 // Put add a redis command to batch, DO NOT put MGET/MSET/MSETNX.
 func (batch *Batch) Put(cmd string, args ...interface{}) error {
-	if len(args) < 1 {
-		return fmt.Errorf("Put: no key found in args")
-	}
+	broadcast := false
+	var node *redisNode
+	var err error
 
-	if cmd == "MGET" || cmd == "MSET" || cmd == "MSETNX" {
-		return fmt.Errorf("Put: %s not supported", cmd)
-	}
+	if strings.ToUpper(cmd) == "PING" {
+		// enable broadcast
+		broadcast = true
+	} else {
+		if len(args) < 1 {
+			return fmt.Errorf("Put: no key found in args")
+		}
 
-	node, err := batch.cluster.getNodeByKey(args[0])
-	if err != nil {
-		return fmt.Errorf("Put: %v", err)
+		if cmd == "MGET" || cmd == "MSET" || cmd == "MSETNX" {
+			return fmt.Errorf("Put: %s not supported", cmd)
+		}
+
+		node, err = batch.cluster.getNodeByKey(args[0])
+		if err != nil {
+			return fmt.Errorf("Put: %v", err)
+		}
 	}
 
 	var i int
 	for i = 0; i < len(batch.batches); i++ {
-		if batch.batches[i].node == node {
+		if broadcast || batch.batches[i].node == node {
 			batch.batches[i].cmds = append(batch.batches[i].cmds,
 				nodeCommand{cmd: cmd, args: args})
 
