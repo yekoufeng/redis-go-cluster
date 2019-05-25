@@ -57,7 +57,9 @@ func (batch *Batch) Put(cmd string, args ...interface{}) error {
 
 	if strings.ToUpper(cmd) == "PING" {
 		// random pick 1 node on the target side
-
+		if node, err = batch.cluster.getRandomNode(); err != nil {
+			return fmt.Errorf("Put PING: %v", err)
+		}
 	} else {
 		if len(args) < 1 {
 			return fmt.Errorf("Put: no key found in args")
