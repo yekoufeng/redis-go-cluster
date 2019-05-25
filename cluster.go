@@ -22,6 +22,7 @@ import (
 	"sync"
 	"strings"
 	"strconv"
+	"math/rand"
 )
 
 // Options is used to initialize a new redis cluster.
@@ -486,6 +487,25 @@ func (cluster *Cluster) getNodeByKey(arg interface{}) (*redisNode, error) {
 	node := cluster.slots[slot]
 	if node == nil {
 		return nil, fmt.Errorf("getNodeByKey: %s[%d] no node found", key, slot)
+	}
+
+	return node, nil
+}
+
+func (cluster *Cluster) getRandomNode() (*redisNode, error) {
+	cluster.rwLock.RLock()
+	defer cluster.rwLock.RUnlock()
+
+	if cluster.closed {
+		return nil, fmt.Errorf("getRandomNode: cluster has been closed")
+	}
+
+	// random slot
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	slot := r.Intn(kClusterSlots)
+	node := cluster.slots[slot]
+	if node == nil {
+		return nil, fmt.Errorf("getRandomNode: slot[%d] no node found", slot)
 	}
 
 	return node, nil

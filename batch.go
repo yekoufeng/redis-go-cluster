@@ -52,13 +52,12 @@ func (cluster *Cluster) NewBatch() *Batch {
 
 // Put add a redis command to batch, DO NOT put MGET/MSET/MSETNX.
 func (batch *Batch) Put(cmd string, args ...interface{}) error {
-	broadcast := false
 	var node *redisNode
 	var err error
 
 	if strings.ToUpper(cmd) == "PING" {
-		// enable broadcast
-		broadcast = true
+		// random pick 1 node on the target side
+
 	} else {
 		if len(args) < 1 {
 			return fmt.Errorf("Put: no key found in args")
@@ -76,7 +75,7 @@ func (batch *Batch) Put(cmd string, args ...interface{}) error {
 
 	var i int
 	for i = 0; i < len(batch.batches); i++ {
-		if broadcast || batch.batches[i].node == node {
+		if batch.batches[i].node == node {
 			batch.batches[i].cmds = append(batch.batches[i].cmds,
 				nodeCommand{cmd: cmd, args: args})
 
