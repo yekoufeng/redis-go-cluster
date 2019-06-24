@@ -55,40 +55,37 @@ func (batch *Batch) Put(cmd string, args ...interface{}) error {
 	var node *redisNode
 	var err error
 
-	if strings.EqualFold(cmd, "PING") {
-		// random pick 1 node on the target side
+	switch strings.ToUpper(cmd) {
+	case "PING":
 		if node, err = batch.cluster.getRandomNode(); err != nil {
 			return fmt.Errorf("Put PING: %v", err)
 		}
-	} else {
-		switch strings.ToUpper(cmd) {
-		case "MGET":
-			fallthrough
-		case "MSET":
-			fallthrough
-		case "MSETNX":
-			return fmt.Errorf("Put: %s not supported", cmd)
-		case "MULTI":
-			batch.cluster.transactionEnable = true
-		case "EXEC":
-			batch.cluster.transactionEnable = false
-		default:
-			if len(args) < 1 {
-				return fmt.Errorf("Put: no key found in args")
-			}
+	case "MGET":
+		fallthrough
+	case "MSET":
+		fallthrough
+	case "MSETNX":
+		return fmt.Errorf("Put: %s not supported", cmd)
+	case "MULTI":
+		batch.cluster.transactionEnable = true
+	case "EXEC":
+		batch.cluster.transactionEnable = false
+	default:
+		if len(args) < 1 {
+			return fmt.Errorf("Put: no key found in args")
+		}
 
-			node, err = batch.cluster.getNodeByKey(args[0])
-			if err != nil {
-				return fmt.Errorf("Put: %v", err)
-			}
+		node, err = batch.cluster.getNodeByKey(args[0])
+		if err != nil {
+			return fmt.Errorf("Put: %v", err)
+		}
 
-			if batch.cluster.transactionEnable {
-				if batch.cluster.transactionNode == nil {
-					batch.cluster.transactionNode = node
-				} else if batch.cluster.transactionNode != node {
-					return fmt.Errorf("transaction command[%v] key[%v] not hashed in the same slot",
-						cmd, string(args[0].([]byte)))
-				}
+		if batch.cluster.transactionEnable {
+			if batch.cluster.transactionNode == nil {
+				batch.cluster.transactionNode = node
+			} else if batch.cluster.transactionNode != node {
+				return fmt.Errorf("transaction command[%v] key[%v] not hashed in the same slot",
+					cmd, string(args[0].([]byte)))
 			}
 		}
 	}
