@@ -61,6 +61,10 @@ type Cluster struct {
 	rwLock sync.RWMutex
 
 	closed bool
+
+	// add by vinllen
+	transactionEnable bool       // marks whether transaction enable
+	transactionNode   *redisNode // the previous node
 }
 
 type updateMesg struct {
@@ -470,12 +474,10 @@ func (cluster *Cluster) getNodeByAddr(addr string) (*redisNode, error) {
 }
 
 func (cluster *Cluster) getNodeByKey(arg interface{}) (*redisNode, error) {
-	key, err := key(arg)
+	slot, err := cluster.getSlot(arg)
 	if err != nil {
-		return nil, fmt.Errorf("getNodeByKey: invalid key %v", key)
+		return nil, err
 	}
-
-	slot := hash(key)
 
 	cluster.rwLock.RLock()
 	defer cluster.rwLock.RUnlock()
@@ -509,6 +511,15 @@ func (cluster *Cluster) getRandomNode() (*redisNode, error) {
 	}
 
 	return node, nil
+}
+
+func (cluster *Cluster) getSlot(arg interface{}) (uint16, error) {
+	key, err := key(arg)
+	if err != nil {
+		return 0, fmt.Errorf("getNodeByKey: invalid key %v", key)
+	}
+
+	return hash(key), nil
 }
 
 func key(arg interface{}) (string, error) {
