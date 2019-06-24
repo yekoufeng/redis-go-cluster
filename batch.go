@@ -61,10 +61,6 @@ func (batch *Batch) Put(cmd string, args ...interface{}) error {
 			return fmt.Errorf("Put PING: %v", err)
 		}
 	} else {
-		if len(args) < 1 {
-			return fmt.Errorf("Put: no key found in args")
-		}
-
 		switch strings.ToUpper(cmd) {
 		case "MGET":
 			fallthrough
@@ -77,6 +73,10 @@ func (batch *Batch) Put(cmd string, args ...interface{}) error {
 		case "EXEC":
 			batch.cluster.transactionEnable = false
 		default:
+			if len(args) < 1 {
+				return fmt.Errorf("Put: no key found in args")
+			}
+			
 			node, err = batch.cluster.getNodeByKey(args[0])
 			if err != nil {
 				return fmt.Errorf("Put: %v", err)
