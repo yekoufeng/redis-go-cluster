@@ -76,7 +76,7 @@ func (batch *Batch) Put(cmd string, args ...interface{}) error {
 			if len(args) < 1 {
 				return fmt.Errorf("Put: no key found in args")
 			}
-			
+
 			node, err = batch.cluster.getNodeByKey(args[0])
 			if err != nil {
 				return fmt.Errorf("Put: %v", err)
@@ -87,7 +87,7 @@ func (batch *Batch) Put(cmd string, args ...interface{}) error {
 					batch.cluster.transactionNode = node
 				} else if batch.cluster.transactionNode != node {
 					return fmt.Errorf("transaction command[%v] key[%v] not hashed in the same slot",
-						cmd, args[0])
+						cmd, string(args[0].([]byte)))
 				}
 			}
 		}
