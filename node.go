@@ -226,7 +226,7 @@ func (conn *redisConn) receive() (interface{}, error) {
 func (node *redisNode) do(cmd string, args ...interface{}) (interface{}, error) {
 	conn, err := node.getConn()
 	if err != nil {
-		return redisError("ECONNTIMEOUT"), nil
+		return fmt.Sprintf("ECONNTIMEOUT: %v", err), nil
 	}
 
 	if err = conn.send(cmd, args...); err != nil {
