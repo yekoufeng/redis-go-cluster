@@ -113,6 +113,10 @@ func (batch *Batch) Put(cmd string, args ...interface{}) error {
 	return nil
 }
 
+func (batch *Batch) GetBatchSize() int {
+	return len(batch.index)
+}
+
 // RunBatch execute commands in batch simutaneously. If multiple commands are 
 // directed to the same node, they will be merged and sent at once using pipeling.
 func (cluster *Cluster) RunBatch(bat *Batch) ([]interface{}, error) {
@@ -171,8 +175,4 @@ func doBatch(batch *nodeBatch) {
 
 	batch.node.releaseConn(conn)
 	batch.done <- 1
-}
-
-func (cluster *Cluster) GetBatchSize(bat *Batch) int {
-	return len(bat.index)
 }
