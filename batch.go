@@ -172,3 +172,7 @@ func doBatch(batch *nodeBatch) {
 	batch.node.releaseConn(conn)
 	batch.done <- 1
 }
+
+func (cluster *Cluster) GetBatchSize(bat *Batch) int {
+	return len(bat.index)
+}
