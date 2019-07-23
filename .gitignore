@@ -1,0 +1,14 @@
+.gopath
+.idea
+*.iml
+logs
+*.pprof
+*.output
+*.data
+*.sw[ap]
+*.yml
+*.pid
+*.tar.gz
+*.log
+tags
+.DS_Store

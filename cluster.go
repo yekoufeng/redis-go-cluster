@@ -125,21 +125,9 @@ func NewCluster(options *Options) (*Cluster, error) {
 // See README.md for more details.
 // See full redis command list: http://www.redis.io/commands
 func (cluster *Cluster) Do(cmd string, args ...interface{}) (interface{}, error) {
-	if len(args) < 1 {
-		return nil, fmt.Errorf("Do: no key found in args")
-	}
-
-	if cmd == "MSET" || cmd == "MSETNX" {
-		return cluster.multiSet(cmd, args...)
-	}
-
-	if cmd == "MGET" {
-		return cluster.multiGet(cmd, args...)
-	}
-
-	node, err := cluster.getNodeByKey(args[0])
+	node, err := cluster.ChooseNodeWithCmd(cmd, args...)
 	if err != nil {
-		return nil, fmt.Errorf("Do getNodeByKey failed[%v]", err)
+		return nil, fmt.Errorf("run ChooseNodeWithCmd failed[%v]", err)
 	}
 
 	reply, err := node.do(cmd, args...)
@@ -174,6 +162,48 @@ func (cluster *Cluster) Close() {
 	}
 
 	cluster.closed = true
+}
+
+func (cluster *Cluster) ChooseNodeWithCmd(cmd string, args ...interface{}) (*redisNode, error) {
+	var node *redisNode
+	var err error
+
+	switch strings.ToUpper(cmd) {
+	case "PING":
+		if node, err = cluster.getRandomNode(); err != nil {
+			return nil, fmt.Errorf("Put PING: %v", err)
+		}
+	case "MGET":
+		fallthrough
+	case "MSET":
+		fallthrough
+	case "MSETNX":
+		return nil, fmt.Errorf("Put: %s not supported", cmd)
+	case "MULTI":
+		cluster.transactionEnable = true
+	case "EXEC":
+		cluster.transactionEnable = false
+	default:
+		if len(args) < 1 {
+			return nil, fmt.Errorf("Put: no key found in args")
+		}
+
+		node, err = cluster.getNodeByKey(args[0])
+		if err != nil {
+			return nil, fmt.Errorf("Put: %v", err)
+		}
+
+		if cluster.transactionEnable {
+			if cluster.transactionNode == nil {
+				cluster.transactionNode = node
+			} else if cluster.transactionNode != node {
+				return nil, fmt.Errorf("transaction command[%v] key[%v] not hashed in the same slot",
+					cmd, string(args[0].([]byte)))
+			}
+		}
+	}
+
+	return node, err
 }
 
 func (cluster *Cluster) handleMove(node *redisNode, replyMsg, cmd string, args []interface{}) (interface{}, error) {

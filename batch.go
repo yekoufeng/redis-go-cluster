@@ -16,7 +16,6 @@ package redis
 
 import (
 	"fmt"
-	"strings"
 )
 
 // Batch pack multiple commands, which should be supported by Do method.
@@ -52,42 +51,9 @@ func (cluster *Cluster) NewBatch() *Batch {
 
 // Put add a redis command to batch, DO NOT put MGET/MSET/MSETNX.
 func (batch *Batch) Put(cmd string, args ...interface{}) error {
-	var node *redisNode
-	var err error
-
-	switch strings.ToUpper(cmd) {
-	case "PING":
-		if node, err = batch.cluster.getRandomNode(); err != nil {
-			return fmt.Errorf("Put PING: %v", err)
-		}
-	case "MGET":
-		fallthrough
-	case "MSET":
-		fallthrough
-	case "MSETNX":
-		return fmt.Errorf("Put: %s not supported", cmd)
-	case "MULTI":
-		batch.cluster.transactionEnable = true
-	case "EXEC":
-		batch.cluster.transactionEnable = false
-	default:
-		if len(args) < 1 {
-			return fmt.Errorf("Put: no key found in args")
-		}
-
-		node, err = batch.cluster.getNodeByKey(args[0])
-		if err != nil {
-			return fmt.Errorf("Put: %v", err)
-		}
-
-		if batch.cluster.transactionEnable {
-			if batch.cluster.transactionNode == nil {
-				batch.cluster.transactionNode = node
-			} else if batch.cluster.transactionNode != node {
-				return fmt.Errorf("transaction command[%v] key[%v] not hashed in the same slot",
-					cmd, string(args[0].([]byte)))
-			}
-		}
+	node, err := batch.cluster.ChooseNodeWithCmd(cmd, args...)
+	if err != nil {
+		return fmt.Errorf("run ChooseNodeWithCmd failed[%v]", err)
 	}
 
 	var i int
