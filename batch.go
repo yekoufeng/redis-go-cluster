@@ -55,6 +55,10 @@ func (batch *Batch) Put(cmd string, args ...interface{}) error {
 	if err != nil {
 		return fmt.Errorf("run ChooseNodeWithCmd failed[%v]", err)
 	}
+	if node == nil {
+		// node is nil means no need to put
+		return nil
+	}
 
 	var i int
 	for i = 0; i < len(batch.batches); i++ {
