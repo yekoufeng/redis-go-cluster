@@ -129,6 +129,9 @@ func (cluster *Cluster) Do(cmd string, args ...interface{}) (interface{}, error)
 	if err != nil {
 		return nil, fmt.Errorf("run ChooseNodeWithCmd failed[%v]", err)
 	}
+	if node == nil {
+		return nil, nil // no need to run
+	}
 
 	reply, err := node.do(cmd, args...)
 	if err != nil {
