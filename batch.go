@@ -84,6 +84,10 @@ func (batch *Batch) Put(cmd string, args ...interface{}) error {
 }
 
 func (batch *Batch) GetBatchSize() int {
+	if batch == nil || batch.index == nil {
+		return 0
+	}
+	
 	return len(batch.index)
 }
 
