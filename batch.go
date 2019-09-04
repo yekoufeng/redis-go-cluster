@@ -90,6 +90,10 @@ func (batch *Batch) GetBatchSize() int {
 // RunBatch execute commands in batch simutaneously. If multiple commands are 
 // directed to the same node, they will be merged and sent at once using pipeling.
 func (cluster *Cluster) RunBatch(bat *Batch) ([]interface{}, error) {
+	if bat == nil || bat.batches == nil || len(bat.batches) == 0 {
+		return []interface{}{}, nil
+	}
+	
 	for i := range bat.batches {
 		go doBatch(&bat.batches[i])
 	}
