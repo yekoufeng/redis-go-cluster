@@ -451,7 +451,7 @@ func (conn *redisConn) readReply() (interface{}, error) {
 			return string(line[1:]), nil
 		}
 	case '-':
-		return redisError(string(line[1:])), nil
+		return nil, redisError(string(line[1:]))
 	case ':':
 		return parseInt(line[1:])
 	case '$':

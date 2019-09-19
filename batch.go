@@ -87,7 +87,7 @@ func (batch *Batch) GetBatchSize() int {
 	if batch == nil || batch.index == nil {
 		return 0
 	}
-	
+
 	return len(batch.index)
 }
 
