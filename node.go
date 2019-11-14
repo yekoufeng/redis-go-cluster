@@ -345,7 +345,7 @@ func (conn *redisConn) readLine() ([]byte, error) {
 
 		n := len(p) - 2
 		if n < 0 {
-			return nil, errors.New("invalid response")
+			return nil, fmt.Errorf("invalid response: readLine data illegal: %v", p)
 		}
 
 		// bulk string may contain '\n', such as CLUSTER NODES
@@ -369,7 +369,7 @@ func (conn *redisConn) readLine() ([]byte, error) {
 // parseLen parses bulk string and array length.
 func parseLen(p []byte) (int, error) {
 	if len(p) == 0 {
-		return -1, errors.New("invalid response")
+		return -1, errors.New("invalid response: parseLen == 0")
 	}
 
 	// null element.
@@ -381,7 +381,7 @@ func parseLen(p []byte) (int, error) {
 	for _, b := range p {
 		n *= 10
 		if b < '0' || b > '9' {
-			return -1, errors.New("invalid response")
+			return -1, fmt.Errorf("invalid response: parseLen: parse character[%c] failed, data: %v", b, p)
 		}
 		n += int(b - '0')
 	}
@@ -392,7 +392,7 @@ func parseLen(p []byte) (int, error) {
 // parseInt parses an integer reply.
 func parseInt(p []byte) (int64, error) {
 	if len(p) == 0 {
-		return 0, errors.New("invalid response")
+		return 0, fmt.Errorf("invalid response: parse int failed[length == 0]")
 	}
 
 	var negate bool
@@ -400,7 +400,7 @@ func parseInt(p []byte) (int64, error) {
 		negate = true
 		p = p[1:]
 		if len(p) == 0 {
-			return 0, errors.New("invalid response")
+			return 0, fmt.Errorf("invalid response: parse int failed[p: %v]", p)
 		}
 	}
 
@@ -408,7 +408,7 @@ func parseInt(p []byte) (int64, error) {
 	for _, b := range p {
 		n *= 10
 		if b < '0' || b > '9' {
-			return 0, errors.New("invalid response")
+			return 0, errors.New("invalid response: parseInt: character[%c] failed, data: %v")
 		}
 		n += int64(b - '0')
 	}
@@ -435,7 +435,7 @@ func (conn *redisConn) readReply() (interface{}, error) {
 		return nil, err
 	}
 	if len(line) == 0 {
-		return nil, errors.New("invalid reponse")
+		return nil, errors.New("invalid response: return size is 0")
 	}
 
 	switch line[0] {
@@ -457,34 +457,34 @@ func (conn *redisConn) readReply() (interface{}, error) {
 	case '$':
 		n, err := parseLen(line[1:])
 		if n < 0 || err != nil {
-			return nil, err
+			return nil, fmt.Errorf("parse length failed: %v, line[0]: %v", err, line[0])
 		}
 
 		line, err = conn.readLine()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("read length failed: %v, line[0]: %v", err, line[0])
 		}
 		if len(line) != n {
-			return nil, errors.New("invalid response")
+			return nil, fmt.Errorf("invalid response: line length[%v] != n[%v]", len(line), n)
 		}
 
 		return line, nil
 	case '*':
 		n, err := parseLen(line[1:])
 		if n < 0 || err != nil {
-			return nil, err
+			return nil, fmt.Errorf("parse length failed: %v, line[0]: %v", err, line[0])
 		}
 
 		r := make([]interface{}, n)
 		for i := range r {
 			r[i], err = conn.readReply()
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("read reply failed: %v, line[0]: %v", err, line[0])
 			}
 		}
 
 		return r, nil
 	}
 
-	return nil, errors.New("invalid response")
+	return nil, fmt.Errorf("invalid response: line[0]: %v", line[0])
 }
