@@ -24,6 +24,7 @@ import (
 	"errors"
 	"strconv"
 	"container/list"
+	"io"
 )
 
 type redisConn struct {
@@ -460,15 +461,27 @@ func (conn *redisConn) readReply() (interface{}, error) {
 			return nil, fmt.Errorf("parse length failed: %v, line[0]: %v", err, line[0])
 		}
 
-		line, err = conn.readLine()
-		if err != nil {
-			return nil, fmt.Errorf("read length failed: %v, line[0]: %v", err, line[0])
-		}
-		if len(line) != n {
-			return nil, fmt.Errorf("invalid response: line length[%v] != n[%v]", len(line), n)
+		/*
+		 * Bugfix: see https://github.com/alibaba/RedisFullCheck/issues/73.
+		 * This may include bug when '\r\n' occurs in the data.
+		 * line, err = conn.readLine()
+		 *
+		 * if err != nil {
+		 * 	   return nil, fmt.Errorf("read length failed: %v, line[0]: %v", err, line[0])
+		 * }
+		 * if len(line) != n {
+		 * 	   return nil, fmt.Errorf("invalid response: line length[%v] != n[%v]", len(line), n)
+		 * }
+		 */
+		buf := make([]byte, n)
+		io.ReadFull(conn.br, buf)
+
+		if len(buf) < n || buf[n - 2] != '\r' || buf[n - 1] != '\n' {
+			return nil, fmt.Errorf("invalid response: length[%v] != n[%v] or suffix != \"\r\n\", line: %v",
+				len(buf), n, line)
 		}
 
-		return line, nil
+		return buf[n - 2], nil
 	case '*':
 		n, err := parseLen(line[1:])
 		if n < 0 || err != nil {
