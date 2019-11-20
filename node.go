@@ -472,16 +472,22 @@ func (conn *redisConn) readReply() (interface{}, error) {
 		 * if len(line) != n {
 		 * 	   return nil, fmt.Errorf("invalid response: line length[%v] != n[%v]", len(line), n)
 		 * }
+		 *
+		 * return line, nil
 		 */
-		buf := make([]byte, n)
-		io.ReadFull(conn.br, buf)
 
-		if len(buf) < n || buf[n - 2] != '\r' || buf[n - 1] != '\n' {
-			return nil, fmt.Errorf("invalid response: length[%v] != n[%v] or suffix != \"\r\n\", line: %v",
+		buf := make([]byte, n + 2)
+		x, err := io.ReadFull(conn.br, buf)
+		if err != nil {
+			return nil, err
+		}
+
+		if x < n || buf[n] != '\r' || buf[n + 1] != '\n' {
+			return nil, fmt.Errorf("invalid response: length[%v] != n[%v] or suffix != \r\n, line: %v",
 				len(buf), n, line)
 		}
 
-		return buf[n - 2], nil
+		return buf[:n], nil
 	case '*':
 		n, err := parseLen(line[1:])
 		if n < 0 || err != nil {
