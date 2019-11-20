@@ -484,7 +484,7 @@ func (conn *redisConn) readReply() (interface{}, error) {
 
 		if x < n || buf[n] != '\r' || buf[n + 1] != '\n' {
 			return nil, fmt.Errorf("invalid response: length[%v] != n[%v] or suffix != \r\n, line: %v",
-				len(buf), n, line)
+				len(buf), n, buf)
 		}
 
 		return buf[:n], nil
