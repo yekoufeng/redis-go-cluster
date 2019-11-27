@@ -458,7 +458,7 @@ func (conn *redisConn) readReply() (interface{}, error) {
 	case '$':
 		n, err := parseLen(line[1:])
 		if n < 0 || err != nil {
-			return nil, fmt.Errorf("parse length failed: %v, line[0]: %v", err, line[0])
+            return nil, fmt.Errorf("parse length failed: %v, line[0]: [%v], length: [%v]", err, rune(line[0]), n)
 		}
 
 		/*
