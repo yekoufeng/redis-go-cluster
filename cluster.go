@@ -186,6 +186,40 @@ func (cluster *Cluster) ChooseNodeWithCmd(cmd string, args ...interface{}) (*red
 		cluster.transactionEnable = true
 	case "EXEC":
 		cluster.transactionEnable = false
+	case "EVAL":
+		fallthrough
+	case "EVALSHA":
+		// check key
+		if len(args) < 1 {
+			return nil, fmt.Errorf("illgal eval parameter: [%v]", args)
+		}
+		nr, err := strconv.Atoi(string(args[1].([]byte)))
+		if err != nil {
+			return nil, fmt.Errorf("parse count[%v] failed[%v]", string(args[1].([]byte)), err)
+		}
+		if nr <= 0 {
+			return nil, fmt.Errorf("lua key number[%v] shouldn't <= 0", nr)
+		}
+
+		var slot uint16
+		for i := 0; i < nr; i++ {
+			curSlot, err := cluster.getSlot(args[2 + i])
+			if err != nil {
+				return nil, fmt.Errorf("get slot of parameter[%v] failed[%v]", args[2 + i], err)
+			}
+
+			if i == 0 {
+				slot = curSlot
+			} else if slot != curSlot {
+				return nil, fmt.Errorf("all keys in the lua script should be hashed into the same slot")
+			}
+		}
+
+		node, err = cluster.getNodeByKey(args[2])
+		if err != nil {
+			return nil, fmt.Errorf("get node by key failed: %v", err)
+		}
+
 	default:
 		if len(args) < 1 {
 			return nil, fmt.Errorf("Put: no key found in args")
