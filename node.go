@@ -493,7 +493,12 @@ func (conn *redisConn) readReply() (interface{}, error) {
 		return buf[:n], nil
 	case '*':
 		n, err := parseLen(line[1:])
-		if n < 0 || err != nil {
+		if n == -1 {
+			// -1 is legal.
+			// For instance when the BLPOP command times out, it returns a Null Array that has a
+			// count of -1 as in the following example
+			return []byte{}, nil
+		} else if n < 0 || err != nil {
 			return nil, fmt.Errorf("parse length failed: %v, line[0]: %v", err, line[0])
 		}
 
