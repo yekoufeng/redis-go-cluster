@@ -19,57 +19,6 @@ import (
 	"testing"
 )
 
-func TestRedisConn(t *testing.T) {
-	node := newRedisNode()
-	conn, err := node.getConn()
-	if err != nil {
-		t.Errorf("getConn error: %s\n", err.Error())
-	}
-	node.releaseConn(conn)
-	if node.conns.Len() != 1 {
-		t.Errorf("releaseConn error")
-	}
-
-	conn1, err := node.getConn()
-	if err != nil {
-		t.Errorf("getConn error: %s\n", err.Error())
-	}
-	if node.conns.Len() != 0 {
-		t.Errorf("releaseConn error")
-	}
-
-	conn2, err := node.getConn()
-	if err != nil {
-		t.Errorf("getConn error: %s\n", err.Error())
-	}
-	conn3, err := node.getConn()
-	if err != nil {
-		t.Errorf("getConn error: %s\n", err.Error())
-	}
-	conn4, err := node.getConn()
-	if err != nil {
-		t.Errorf("getConn error: %s\n", err.Error())
-	}
-
-	node.releaseConn(conn1)
-	node.releaseConn(conn2)
-	node.releaseConn(conn3)
-	node.releaseConn(conn4)
-
-	if node.conns.Len() != 3 {
-		t.Errorf("releaseConn error")
-	}
-
-	conn, err = node.getConn()
-	if err != nil {
-		t.Errorf("getConn error: %s\n", err.Error())
-	}
-
-	if node.conns.Len() != 2 {
-		t.Errorf("releaseConn error")
-	}
-}
-
 func TestRedisDo(t *testing.T) {
 	node := newRedisNode()
 
@@ -94,8 +43,7 @@ func TestRedisDo(t *testing.T) {
 	reply, err = node.do("GET", "notexist")
 	if err != nil {
 		t.Errorf("GET error: %s\n", err.Error())
-	}
-	if reply != nil {
+	} else if reply != nil {
 		t.Errorf("unexpected value %v\n", reply)
 	}
 
@@ -214,17 +162,18 @@ func TestRedisPipeline(t *testing.T) {
 	conn.receive()
 	value, err := Int(conn.receive())
 	if value != 141 {
-		t.Errorf("unexpected error: %d\n", reply)
+		t.Errorf("unexpected error: %v\n", reply)
 	}
 }
 
 func newRedisNode() *redisNode {
 	return &redisNode{
-		address:      "127.0.0.1:6379",
+		// address:      "127.0.0.1:6379",
+		address: "100.81.164.177:36335",
 		keepAlive:    3,
 		aliveTime:    60 * time.Second,
-		connTimeout:  50 * time.Millisecond,
-		readTimeout:  50 * time.Millisecond,
-		writeTimeout: 50 * time.Millisecond,
+		connTimeout:  5 * time.Second,
+		readTimeout:  5 * time.Second,
+		writeTimeout: 5 * time.Second,
 	}
 }

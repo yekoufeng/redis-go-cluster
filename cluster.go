@@ -140,15 +140,27 @@ func (cluster *Cluster) Do(cmd string, args ...interface{}) (interface{}, error)
 
 	resp := checkReply(reply)
 
-	switch(resp) {
+	switch resp {
 	case kRespOK, kRespError:
 		return reply, nil
 	case kRespMove:
-		return cluster.handleMove(node, reply.(redisError).Error(), cmd, args)
+		if ret, err := cluster.handleMove(node, reply.(redisError).Error(), cmd, args); err != nil {
+			return ret, fmt.Errorf("handle move failed[%v]", err)
+		} else {
+			return ret, nil
+		}
 	case kRespAsk:
-		return cluster.handleAsk(node, reply.(redisError).Error(), cmd, args)
+		if ret, err := cluster.handleAsk(node, reply.(redisError).Error(), cmd, args); err != nil {
+			return ret, fmt.Errorf("handle ask failed[%v]", err)
+		} else {
+			return ret, nil
+		}
 	case kRespConnTimeout:
-		return cluster.handleConnTimeout(node, cmd, args)
+		if ret, err := cluster.handleConnTimeout(node, cmd, args); err != nil {
+			return ret, fmt.Errorf("handle timeout failed[%v]", err)
+		} else {
+			return ret, nil
+		}
 	}
 
 	panic("unreachable")
@@ -302,6 +314,7 @@ func (cluster *Cluster) handleAsk(node *redisNode, replyMsg, cmd string, args []
 	return reply, nil
 }
 
+// choose another node to connect and judge whether node crashed
 func (cluster *Cluster) handleConnTimeout(node *redisNode, cmd string, args []interface{}) (interface{}, error) {
 	var randomNode *redisNode
 
@@ -316,7 +329,10 @@ func (cluster *Cluster) handleConnTimeout(node *redisNode, cmd string, args []in
 
 	reply, err := randomNode.do(cmd, args...)
 	if err != nil {
-		return nil, fmt.Errorf("handleConnTimeout: %v", err)
+		return nil, fmt.Errorf("random node[%v] connection still failed: %v, previous node[%v]",
+			node.address, err, node.address)
+	} else if checkReply(reply) == kRespConnTimeout {
+		return fmt.Errorf("%v. previous node[%v]", reply, node.address), nil
 	}
 
 	if _, ok := reply.(redisError); !ok {
@@ -332,7 +348,7 @@ func (cluster *Cluster) handleConnTimeout(node *redisNode, cmd string, args []in
 		return nil, errors.New(errMsg)
 	}
 
-	// When MOVED received, we check wether move adress equal to
+	// When MOVED received, we check whether move address equal to
 	// previous one. If equal, then it's just an connection timeout
 	// error, return error and carry on. If not, then the master may
 	// down or unreachable, a new master has served the slot, request
@@ -357,7 +373,12 @@ func (cluster *Cluster) handleConnTimeout(node *redisNode, cmd string, args []in
 		return nil, fmt.Errorf("handleConnTimeout: %v", err)
 	}
 
-	return newNode.do(cmd, args...)
+	if ret, err := newNode.do(cmd, args...); err != nil {
+		return nil, fmt.Errorf("node moves from [%v] to [%v] but still failed[%v]", node.address,
+			newNode.address, err)
+	} else {
+		return ret, nil
+	}
 }
 
 const (
@@ -555,7 +576,7 @@ func (cluster *Cluster) getNodeByKey(arg interface{}) (*redisNode, error) {
 
 	node := cluster.slots[slot]
 	if node == nil {
-		return nil, fmt.Errorf("getNodeByKey: %s[%d] no node found", key, slot)
+		return nil, fmt.Errorf("getNodeByKey: %v[%d] no node found", arg, slot)
 	}
 
 	return node, nil
