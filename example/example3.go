@@ -5,7 +5,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/chasex/redis-go-cluster"
+    "github.com/vinllen/redis-go-cluster"
 )
 
 func main() {
