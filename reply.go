@@ -53,7 +53,7 @@ func Int(reply interface{}, err error) (int, error) {
 	case redisError:
 		return 0, reply
 	}
-	return 0, fmt.Errorf("unexpected type %T for Int", reply)
+	return 0, fmt.Errorf("unexpected type %T for Int: %v", reply, reply)
 }
 
 // Int64 is a helper that converts a command reply to 64 bit integer. If err is
@@ -80,7 +80,7 @@ func Int64(reply interface{}, err error) (int64, error) {
 	case redisError:
 		return 0, reply
 	}
-	return 0, fmt.Errorf("unexpected type %T for Int64", reply)
+	return 0, fmt.Errorf("unexpected type %T for Int64: %v", reply, reply)
 }
 
 // Float64 is a helper that converts a command reply to 64 bit float. If err is
@@ -104,7 +104,7 @@ func Float64(reply interface{}, err error) (float64, error) {
 	case redisError:
 		return 0, reply
 	}
-	return 0, fmt.Errorf("unexpected type %T for Float64", reply)
+	return 0, fmt.Errorf("unexpected type %T for Float64: %v", reply, reply)
 }
 
 // String is a helper that converts a command reply to a string. If err is not
@@ -130,7 +130,7 @@ func String(reply interface{}, err error) (string, error) {
 	case redisError:
 		return "", reply
 	}
-	return "", fmt.Errorf("unexpected type[%T] for String", reply)
+	return "", fmt.Errorf("unexpected type[%T] for String: %v", reply, reply)
 }
 
 // Bytes is a helper that converts a command reply to a slice of bytes. If err
@@ -156,7 +156,7 @@ func Bytes(reply interface{}, err error) ([]byte, error) {
 	case redisError:
 		return nil, reply
 	}
-	return nil, fmt.Errorf("unexpected type %T for Bytes", reply)
+	return nil, fmt.Errorf("unexpected type %T for Bytes: %v", reply, reply)
 }
 
 // Bool is a helper that converts a command reply to a boolean. If err is not
@@ -182,7 +182,7 @@ func Bool(reply interface{}, err error) (bool, error) {
 	case redisError:
 		return false, reply
 	}
-	return false, fmt.Errorf("unexpected type %T for Bool", reply)
+	return false, fmt.Errorf("unexpected type %T for Bool: %v", reply, reply)
 }
 
 // Values is a helper that converts an array command reply to a []interface{}.
@@ -205,7 +205,7 @@ func Values(reply interface{}, err error) ([]interface{}, error) {
 	case redisError:
 		return nil, reply
 	}
-	return nil, fmt.Errorf("unexpected type %T for Values", reply)
+	return nil, fmt.Errorf("unexpected type %T for Values: %v", reply, reply)
 }
 
 // Ints is a helper that converts an array command reply to a []int. 
@@ -241,7 +241,7 @@ func Strings(reply interface{}, err error) ([]string, error) {
 
 	strings := make([]string, len(values))
 	slice := make([]interface{}, len(values))
-	for i, _ := range strings {
+	for i := range strings {
 		slice[i] = &strings[i]
 	}
 
