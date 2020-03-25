@@ -198,6 +198,7 @@ func (cluster *Cluster) ChooseNodeWithCmd(cmd string, args ...interface{}) (*red
 		cluster.transactionEnable = true
 	case "EXEC":
 		cluster.transactionEnable = false
+		cluster.transactionNode = nil
 	case "EVAL":
 		fallthrough
 	case "EVALSHA":
