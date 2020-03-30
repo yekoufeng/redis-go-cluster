@@ -189,11 +189,28 @@ func (cluster *Cluster) ChooseNodeWithCmd(cmd string, args ...interface{}) (*red
 			return nil, fmt.Errorf("Put PING: %v", err)
 		}
 	case "MGET":
-		fallthrough
+		return nil, fmt.Errorf("Put: %s not supported", cmd)
 	case "MSET":
 		fallthrough
 	case "MSETNX":
-		return nil, fmt.Errorf("Put: %s not supported", cmd)
+		if len(args) == 0 {
+			return nil, fmt.Errorf("args is empty")
+		}
+
+		// check all keys hash to the same slot
+		for i := 0; i < len(args); i += 2 {
+			curNode, err := cluster.getNodeByKey(args[i])
+			if err != nil {
+				return nil, fmt.Errorf("get node of parameter[%v] failed[%v]", args[i], err)
+			}
+
+			if i == 0 {
+				node = curNode
+			} else if node != curNode {
+				return nil, fmt.Errorf("all keys in the mset/msetnx script should be hashed into the same node, " +
+					"current key[%v] node[%v] != previous_node[%v]", args[i], curNode.address, node.address)
+			}
+		}
 	case "MULTI":
 		cluster.transactionEnable = true
 	case "EXEC":
