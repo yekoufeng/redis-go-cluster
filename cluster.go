@@ -233,7 +233,7 @@ func (cluster *Cluster) ChooseNodeWithCmd(cmd string, args ...interface{}) (*red
 
 		var slot uint16
 		for i := 0; i < nr; i++ {
-			curSlot, err := cluster.getSlot(args[2 + i])
+			curSlot, err := GetSlot(args[2 + i])
 			if err != nil {
 				return nil, fmt.Errorf("get slot of parameter[%v] failed[%v]", args[2 + i], err)
 			}
@@ -580,7 +580,7 @@ func (cluster *Cluster) getNodeByAddr(addr string) (*redisNode, error) {
 }
 
 func (cluster *Cluster) getNodeByKey(arg interface{}) (*redisNode, error) {
-	slot, err := cluster.getSlot(arg)
+	slot, err := GetSlot(arg)
 	if err != nil {
 		return nil, err
 	}
@@ -619,7 +619,7 @@ func (cluster *Cluster) getRandomNode() (*redisNode, error) {
 	return node, nil
 }
 
-func (cluster *Cluster) getSlot(arg interface{}) (uint16, error) {
+func GetSlot(arg interface{}) (uint16, error) {
 	key, err := key(arg)
 	if err != nil {
 		return 0, fmt.Errorf("getNodeByKey: invalid key %v", key)
