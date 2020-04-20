@@ -188,6 +188,13 @@ func (cluster *Cluster) ChooseNodeWithCmd(cmd string, args ...interface{}) (*red
 		if node, err = cluster.getRandomNode(); err != nil {
 			return nil, fmt.Errorf("Put PING: %v", err)
 		}
+	case "SELECT":
+		// no need to put "select 0" in cluster
+		db := args[2].(string)
+		if db != "0" {
+			return nil, fmt.Errorf("can only run 'select 0' but the choose db is [%s]", db)
+		}
+		return nil, nil
 	case "MGET":
 		return nil, fmt.Errorf("Put: %s not supported", cmd)
 	case "MSET":
@@ -264,8 +271,8 @@ func (cluster *Cluster) ChooseNodeWithCmd(cmd string, args ...interface{}) (*red
 			if cluster.transactionNode == nil {
 				cluster.transactionNode = node
 			} else if cluster.transactionNode != node {
-				return nil, fmt.Errorf("transaction command[%v] key[%v] not hashed in the same slot",
-					cmd, string(args[0].([]byte)))
+				return nil, fmt.Errorf("transaction command[%v] key[%v] not hashed in the same node: current[%v], previous[%v]",
+					cmd, string(args[0].([]byte)), node.address, cluster.transactionNode.address)
 			}
 		}
 	}
