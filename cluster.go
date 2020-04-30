@@ -190,10 +190,6 @@ func (cluster *Cluster) ChooseNodeWithCmd(cmd string, args ...interface{}) (*red
 		}
 	case "SELECT":
 		// no need to put "select 0" in cluster
-		db := args[2].(string)
-		if db != "0" {
-			return nil, fmt.Errorf("can only run 'select 0' but the choose db is [%s]", db)
-		}
 		return nil, nil
 	case "MGET":
 		return nil, fmt.Errorf("Put: %s not supported", cmd)
