@@ -125,6 +125,9 @@ func NewCluster(options *Options) (*Cluster, error) {
 // See README.md for more details.
 // See full redis command list: http://www.redis.io/commands
 func (cluster *Cluster) Do(cmd string, args ...interface{}) (interface{}, error) {
+	if cmd == "MGet" {
+                return cluster.multiGet(cmd, args...)
+        }
 	node, err := cluster.ChooseNodeWithCmd(cmd, args...)
 	if err != nil {
 		return nil, fmt.Errorf("run ChooseNodeWithCmd failed[%v]", err)
